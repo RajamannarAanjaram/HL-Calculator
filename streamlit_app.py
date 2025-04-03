@@ -176,44 +176,49 @@ if st.session_state.calculated:
     
     # Create tabs for different views
     tab1, tab2, tab3 = st.tabs(["Summary", "Amortization Table", "Charts"])
-    
+
     with tab1:
-        # Display summary in two columns
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.subheader("Loan Information")
-            st.write(f"Original Loan Amount: ₹ {summary['Total Principal']:,.2f}")
-            st.write(f"Interest Rate: {interest_rate}% per annum")
-            st.write(f"Original EMI: ₹ {summary['Original EMI']:,.2f}")
-            st.write(f"Initial EMI Payment: ₹ {summary['Initial EMI']:,.2f}")
-            st.write(f"Final EMI Payment: ₹ {summary['Final EMI']:,.2f}")
-            st.write(f"Part Payment Effect: {summary['Part Payment Effect']}")
-            
-        with col2:
-            st.subheader("Loan Term & Savings")
-            st.write(f"Original Loan Term: {summary['Original Loan Tenure']} months ({loan_tenure} years)")
-            st.write(f"Actual Loan Term: {summary['Actual Loan Tenure']} months ({summary['Actual Loan Tenure']/12:.1f} years)")
-            
+        st.subheader("📊 Loan Summary Overview")
+
+        # Show summary metrics in info boxes
+        col1, col2, col3 = st.columns(3)
+        col1.metric("💰 Original EMI", f"₹ {summary['Original EMI']:,.2f}")
+        col2.metric("📉 Final EMI", f"₹ {summary['Final EMI']:,.2f}",
+                    delta=f"₹ {summary['Original EMI'] - summary['Final EMI']:,.2f}" if summary['Part Payment Effect'] == 'Reducing EMI' else "")
+        col3.metric("🕒 Loan Term", f"{summary['Actual Loan Tenure']} months",
+                    delta=f"-{summary['Months Saved']} mo" if summary['Part Payment Effect'] == 'Reducing Tenure' else "")
+
+        # Loan detail sections
+        st.markdown("### 🧾 Loan Details")
+        col4, col5 = st.columns(2)
+        with col4:
+            st.write(f"**🏦 Loan Amount**: ₹ {summary['Total Principal']:,.0f}")
+            st.write(f"**📈 Interest Rate**: {interest_rate}% p.a.")
+            st.write(f"**📅 Start Date**: {loan_start_date.strftime('%b %Y')}")
+            st.write(f"**🎯 Payment Strategy**: {summary['Part Payment Effect']}")
+
+        with col5:
+            st.write(f"**🗓 Original Tenure**: {summary['Original Loan Tenure']} months ({loan_tenure} years)")
+            st.write(f"**⏱ Actual Tenure**: {summary['Actual Loan Tenure']} months ({summary['Actual Loan Tenure']/12:.1f} years)")
             if summary['Part Payment Effect'] == 'Reducing Tenure':
-                st.write(f"Months Saved: {summary['Months Saved']} months ({summary['Months Saved']/12:.1f} years)")
+                st.write(f"**📆 Months Saved**: {summary['Months Saved']} months ({summary['Months Saved']/12:.1f} years)")
             else:
-                st.write(f"EMI Reduction: ₹ {summary['Original EMI'] - summary['Final EMI']:,.2f}")
-                
-            st.write(f"Total Interest Paid: ₹ {summary['Total Interest Paid']:,.2f}")
-            st.write(f"Interest Saved: ₹ {summary['Interest Saved']:,.2f}", 
-                    help="Compared to original loan schedule")
-            
-            # Calculate total payments
-            total_payments = summary['Total Principal'] + summary['Total Interest Paid']
-            st.write(f"Total Amount Paid: ₹ {total_payments:,.2f}")
-        
-        # Add a progress meter for loan completion
-        st.subheader("Loan Progress")
-        loan_progress = min(100, 100 * (df['Month'].max() / summary['Original Loan Tenure']))
-        st.progress(loan_progress / 100)
-        st.write(f"Loan completion: {loan_progress:.1f}%")
-    
+                st.write(f"**💸 EMI Reduced By**: ₹ {summary['Original EMI'] - summary['Final EMI']:,.2f}")
+
+        # Interest and total payment summary
+        st.markdown("### 💸 Financial Impact")
+        st.success(f"**Total Interest Paid**: ₹ {summary['Total Interest Paid']:,.2f}")
+        st.info(f"**Interest Saved**: ₹ {summary['Interest Saved']:,.2f}")
+        total_payments = summary['Total Principal'] + summary['Total Interest Paid']
+        st.warning(f"**Total Amount Paid (Principal + Interest)**: ₹ {total_payments:,.2f}")
+
+        # Visual Loan Progress
+        # st.markdown("### 📈 Loan Progress")
+        # loan_progress = min(100, 100 * (df['Month'].max() / summary['Original Loan Tenure']))
+        # st.progress(loan_progress / 100)
+        # st.write(f"🔁 You are {loan_progress:.1f}% through your loan schedule.")
+
+
     with tab2:
         # Display full amortization schedule
         st.dataframe(df, use_container_width=True)
